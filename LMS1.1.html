@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>MYCAS Library | Smart Book Recommender</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: linear-gradient(145deg, #f0f7fc 0%, #e9f0f5 100%); color: #1a2c3c; overflow-x: hidden; }
+
+    /* Splash screen */
+    .splash-screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #0a2f3f; display: flex; justify-content: center; align-items: center;
+      z-index: 9999; transition: opacity 0.6s ease;
+    }
+    .splash-logo {
+      width: 150px; height: 150px; background: white; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;
+      box-shadow: 0 20px 35px rgba(0,0,0,0.3); overflow: hidden;
+    }
+    .splash-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .splash-content h2 { color: white; font-weight: 600; text-align: center; }
+    @keyframes pulse { 0% { transform: scale(0.98); opacity: 0.8; } 100% { transform: scale(1.05); opacity: 1; } }
+    .splash-content { animation: pulse 1.2s infinite alternate; text-align: center; }
+    .main-content { display: none; opacity: 0; transition: opacity 0.5s; }
+    .main-content.visible { display: block; opacity: 1; }
+
+    /* Header */
+    .library-header {
+      background: rgba(10, 47, 63, 0.95); backdrop-filter: blur(12px); color: white;
+      padding: 0.8rem 2rem; display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .circle-logo {
+      width: 65px; height: 65px; background: white; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .circle-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .header-text h1 { font-size: 1.7rem; }
+    .header-text p { font-size: 0.8rem; opacity: 0.85; }
+
+    /* Filter panel */
+    .filter-panel {
+      background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); margin: 2rem 2rem 0.5rem 2rem;
+      padding: 1.4rem 2rem; border-radius: 48px; display: flex; flex-wrap: wrap;
+      align-items: flex-end; gap: 20px; justify-content: space-between;
+    }
+    .filters { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-group label { font-weight: 700; color: #1a4f64; font-size: 0.8rem; }
+    select, .go-btn {
+      padding: 12px 22px; border-radius: 44px; border: 1px solid rgba(0,0,0,0.1);
+      font-family: inherit; font-weight: 500; background: white; cursor: pointer;
+    }
+    select { min-width: 190px; }
+    .go-btn {
+      background: #195f74; color: white; border: none; padding: 12px 36px;
+      display: inline-flex; align-items: center; gap: 8px; font-weight: 700;
+    }
+    .go-btn:hover { background: #0e4656; transform: scale(0.97); }
+
+    /* Books grid */
+    .books-section { margin: 2rem 2rem 3rem; }
+    .section-title { font-size: 1.8rem; font-weight: 800; border-left: 6px solid #195f74; padding-left: 20px; margin-bottom: 1.8rem; }
+    .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2rem; justify-items: center; }
+    .book-card {
+      background: white; border-radius: 32px; width: 100%; max-width: 250px; overflow: hidden;
+      transition: 0.25s ease; box-shadow: 0 18px 30px rgba(0,0,0,0.08); cursor: pointer;
+    }
+    .book-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 25px 40px rgba(0,0,0,0.15); }
+    .book-cover { background: #fefaf5; padding: 1.8rem 1rem; display: flex; justify-content: center; min-height: 240px; }
+    .book-cover img { width: 100%; max-width: 160px; border-radius: 16px; box-shadow: 0 12px 20px rgba(0,0,0,0.2); aspect-ratio: 3/4; object-fit: cover; }
+    .book-info { padding: 1rem; text-align: center; }
+    .book-title { font-weight: 800; font-size: 1rem; }
+    .book-author { font-size: 0.75rem; color: #6c8d9c; margin-top: 4px; }
+
+    /* Flipbook modal (unlimited pages) */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center;
+      visibility: hidden; opacity: 0; transition: 0.25s; z-index: 10000;
+    }
+    .modal-overlay.active { visibility: visible; opacity: 1; }
+    .flipbook-container {
+      background: #1e2f3a; width: 90%; max-width: 750px; border-radius: 48px; padding: 1.2rem;
+      box-shadow: 0 30px 50px rgba(0,0,0,0.5);
+    }
+    .flipbook-header { display: flex; justify-content: space-between; align-items: center; color: white; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px; }
+    .close-flipbook { background: none; border: none; font-size: 1.8rem; color: white; cursor: pointer; }
+    .carousel-area { position: relative; display: flex; align-items: center; justify-content: center; min-height: 420px; }
+    .flip-img { width: 100%; max-width: 380px; border-radius: 24px; box-shadow: 0 20px 35px rgba(0,0,0,0.3); transition: transform 0.2s; background: #f9f3ea; cursor: pointer; }
+    .nav-arrow {
+      background: rgba(0,0,0,0.5); border: none; font-size: 2.2rem; color: white;
+      width: 48px; height: 48px; border-radius: 60px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; position: absolute; top: 50%; transform: translateY(-50%);
+    }
+    .nav-left { left: 10px; }
+    .nav-right { right: 10px; }
+    .nav-arrow:hover { background: #195f74; transform: translateY(-50%) scale(1.05); }
+    .page-indicator { text-align: center; margin-top: 20px; color: #ddd; font-weight: 500; }
+    @media (max-width: 600px) {
+      .flip-img { max-width: 260px; }
+      .nav-arrow { width: 38px; height: 38px; font-size: 1.4rem; }
+      .filter-panel { margin: 1rem; padding: 1rem; }
+      .books-section { margin: 1rem; }
+    }
+
+    /* Footer */
+    .footer { background: #0a2f3f; color: #efefef; padding: 2rem; margin-top: 3rem; text-align: center; }
+    .social-icons { display: flex; justify-content: center; gap: 2rem; margin-bottom: 1rem; }
+    .social-icons a { color: white; font-size: 1.8rem; transition: 0.2s; }
+    .social-icons a:hover { transform: scale(1.1); color: #ffda88; }
+    .footer-links a { color: #ffda88; text-decoration: none; }
+    .empty-message { grid-column: 1/-1; text-align: center; padding: 3rem; background: #fff3e0; border-radius: 48px; }
+  </style>
+</head>
+<body>
+
+<div id="splash" class="splash-screen">
+  <div class="splash-content">
+    <div class="splash-logo">
+      <!-- REPLACE 'logo.png' WITH YOUR ACTUAL LOGO PATH -->
+      <img src="logo.jpg" alt="College Logo">
+    </div>
+    <h2>MYCAS Central Library</h2>
+    <p style="color: #ccc; margin-top: 10px;">Empowering knowledge</p>
+  </div>
+</div>
+
+<div id="mainApp" class="main-content">
+  <header class="library-header">
+    <div class="circle-logo">
+      <!-- SAME LOGO IMAGE PATH -->
+      <img src="logo.jpg" alt="College Logo">
+    </div>
+    <div class="header-text">
+      <h1>🏛️ MYCAS</h1>
+      <p>MYSORE INSTITUTE OF COMMERCE, ARTS & SCIENCE</p>
+    </div>
+  </header>
+
+  <div class="filter-panel">
+    <div class="filters">
+      <div class="filter-group">
+        <label>📘 Program</label>
+        <select id="programSelect">
+          <option value="">-- Select Program --</option>
+          <option value="I PUC Commerce">I PUC Commerce</option>
+          <option value="II PUC Commerce">II PUC Commerce</option>
+          <option value="I PUC Science">I PUC Science</option>
+          <option value="II PUC Science">II PUC Science</option>
+          <option value="BCom">BCom</option>
+          <option value="BCA">BCA</option>
+          <option value="BBA">BBA</option>
+          <option value="BCom FM">BCom FM</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>📅 Year / Semester</label>
+        <select id="semesterSelect" disabled>
+          <option value="">-- First select Program --</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>📖 Subject</label>
+        <select id="subjectSelect" disabled>
+          <option value="">-- First select Year/Semester --</option>
+        </select>
+      </div>
+    </div>
+    <button class="go-btn" id="goBtn"><i class="fas fa-search"></i> Go → Show Books</button>
+  </div>
+
+  <section class="books-section">
+    <div class="section-title"><i class="fas fa-bookmark"></i> Recommended Books</div>
+    <div id="booksGrid" class="books-grid"></div>
+  </section>
+
+  <footer class="footer">
+    <div class="social-icons">
+      <a href="#" id="instaLink" target="_blank"><i class="fab fa-instagram"></i></a>
+      <a href="#" id="fbLink" target="_blank"><i class="fab fa-facebook-f"></i></a>
+      <a href="#" id="linkedinLink" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+    </div>
+    <div class="footer-links">
+      <p>© 2025 MYCAS Library | <a href="#" id="devLink">Developer Info</a></p>
+    </div>
+  </footer>
+</div>
+
+<div id="flipbookModal" class="modal-overlay">
+  <div class="flipbook-container">
+    <div class="flipbook-header">
+      <h3 id="modalBookTitle">📖 Book Preview</h3>
+      <button class="close-flipbook" id="closeFlipBtn"><i class="fas fa-times-circle"></i></button>
+    </div>
+    <div class="carousel-area">
+      <button class="nav-arrow nav-left" id="prevImgBtn"><i class="fas fa-chevron-left"></i></button>
+      <img id="flipImage" class="flip-img" src="" alt="book page">
+      <button class="nav-arrow nav-right" id="nextImgBtn"><i class="fas fa-chevron-right"></i></button>
+    </div>
+    <div class="page-indicator" id="pageIndicator">Page 1</div>
+  </div>
+</div>
+
+<script>
+  // --------------------------------------------------------------
+  // 1. SUBJECT MAPPING (Program + Semester/Year -> Subject List)
+  // --------------------------------------------------------------
+  const subjectMap = {
+    // I PUC Commerce (1st Year)
+    "I PUC Commerce_1": ["Kannada", "English", "Economics", "Business Studies", "Accountancy", "Computer Science"],
+    // II PUC Commerce (2nd Year)
+    "II PUC Commerce_2": ["Kannada", "English", "Economics", "Business Studies", "Accountancy", "Computer Science"],
+    // I PUC Science (1st Year)
+    "I PUC Science_1": ["Kannada", "English", "Physics", "Chemistry", "Mathematics", "Biology", "Computer Science"],
+    // II PUC Science (2nd Year)
+    "II PUC Science_2": ["Kannada", "English", "Physics", "Chemistry", "Mathematics", "Biology", "Computer Science"],
+
+    // BCom (semesters 1 to 6)
+    "BCom_1": ["FUNDAMENTALS OF FINANCIAL ACCOUNTING", "BUSINESS MATHEMATICS", "BANKING LAW AND PRACTICE", "KANNADA", "ENGLISH", "CONSTITUTIONAL VALUE"],
+    "BCom_2": ["ADVANCED FINANCIAL ACCOUNTING", "FUNDAMENTALS OF COS ACCOUNTING", "COMPANY LAW AND PRACTICE", "KANNADA", "ENGLISH", "CONSTITUTIONAL VALUE"],
+    "BCom_3": ["FUNDAMENTALS CORPORATE ACCOUNTING OF", "INCOME TAX LAW & PRACTICE - I", "ADVANCED ACCOUNTING", "COST", "ELECTIVE", "ELECTIVE"],
+    "BCom_4": ["ADVANCED CORPORATE ACCOUNTING", "INCOME TAX LAW & PRACTICE - II", "BUSINESS STATSTICS", "ELECTIVE", "ENTREPRENEURSHIP DEVELOPMENT"],
+    "BCom_5": ["Business Law", "Human Resource Management", "Business Analysis", "Corporate Finance", "Assessment of Persons Other than Individuals", "Indian Accounting Standards-I", "Small Business Management", "Business Communication Skills"],
+    "BCom_6": ["Auditing", "Marketing Management", "Management Accounting", "Advanced Corporate Finance", "Goods and Services Tax", "Indian Accounting Standards-II", "Women and Social Entrepreneurship", "Startup Eco-System Skills"],
+
+    // BCA semesters 1-6
+    "BCA_1": ["Digital Computer Organization", "Office Automation and HTML", "Problem Solving using C++", "C++ Programming", "Mathematical and Statistical Computing", "Mathematical and Statistical Computing using R"],
+    "BCA_2": ["Data Structures", "Data Structures using C++", "Object Oriented Programming with Java", "Programming with Java", "Operating Systems", "Shell Programming"],
+    "BCA_3": ["C#.NET Programming", "C#.NET Programming Lab", "Data Base Management System", "DBMS Lab", "Web Technologies", "Web Technologies Lab", "Cyber Security", "Software Engineering", "System Software", "Cloud Computing", "Digital Image Processing", "E-Commerce and E-Governance"],
+    "BCA_4": ["Computer Networks", "Networking Lab", "Python Programming", "Python Programming Lab", "PHP & MySQL", "PHP & MySQL Lab", "Fundamentals of Data Science", "Internet of things", "Software Testing", "Digital Marketing"],
+    "BCA_5": ["Advanced Web Technologies", "Data Mining", "Big Data Analytics", "Mobile App Development", "Software Testing", "Cloud Computing"],
+    "BCA_6": ["Machine Learning", "Artificial Intelligence", "Cyber Security", "Project Work", "Internship", "Elective"],
+
+    // BBA semesters 1-6
+    "BBA_1": ["Language-I", "Language-II", "Principles & Practices of Management", "Fundamentals of Business Accounting", "Business Economics", "Business Communication", "Constitutional Values"],
+    "BBA_2": ["Language-I", "Language-II", "Organizational Behaviour", "Financial Accounting and Reporting", "Business Statistics", "Marketing Management", "Constitutional Values"],
+    "BBA_3": ["Language-I", "Language-II", "Cost Accounting", "Business Statistics II", "Business Environment", "Entrepreneurship and Startup Ecosystem", "Banking and Financial Services", "Digital Marketing"],
+    "BBA_4": ["Language-I", "Language-II", "Financial Management", "Human Resource Management", "Management Accounting", "Logistics and Supply Chain Management", "Business Analytics", "Information Technology For Business"],
+    "BBA_5": ["Production and Operations Management", "Business Research Methods", "Income Tax", "Specialization I", "Specialization I", "E-Commerce", "Digital Tools for Business Decisions", "ERP and CRM", "Advance Excel for Business"],
+    "BBA_6": ["Strategic Management", "Legal Framework for Business", "Goods and Services Tax", "Specialization II", "Specialization II", "Project Report"],
+
+    // BCom FM semesters 1-6
+    "BCom FM_1": ["English", "Kannada/French", "Fundamentals of Accounting", "Principles of Management", "Business Mathematics", "Monetary Economics", "Yoga", "Indian Banking Systems"],
+    "BCom FM_2": ["English", "Kannada/French", "Financial Accounting", "Logical Reasoning", "Environmental Studies", "Indian Financial System", "Current affairs", "IT for Managers"],
+    "BCom FM_3": ["English", "Kannada/French", "Cost Accounting", "Marketing Management", "Introduction to Financial Management", "Industrial and Organizational Psychology", "Artificial Intelligence and Business Intelligence", "Introduction to Financial Markets"],
+    "BCom FM_4": ["English", "Kannada/French", "Management Accounting", "Financial Decision", "Human Resource Management", "Constitution of India", "Introduction to Business and Commercial Law", "Basics of Securities Market"],
+    "BCom FM_5": ["Advanced Accounting-I", "Business Statistics", "Introduction to Entrepreneurship", "Research Methodology-1", "Direct Tax-I", "Fundamentals of FinTech and Digital marketing Analytics", "Fundamentals of Mutual Funds"],
+    "BCom FM_6": ["Advanced Accounting-II", "Startup Eco System", "Portfolio/Security Analysis", "Research Methodology-II", "Derivatives", "Direct Tax-II", "Introduction to R", "Tally"]
+  };
+
+  // --------------------------------------------------------------
+  // 2. DYNAMIC DROPDOWNS
+  // --------------------------------------------------------------
+  const programSelect = document.getElementById("programSelect");
+  const semesterSelect = document.getElementById("semesterSelect");
+  const subjectSelect = document.getElementById("subjectSelect");
+
+  function updateSemesterOptions() {
+    const program = programSelect.value;
+    semesterSelect.innerHTML = '<option value="">-- Select Year/Semester --</option>';
+    subjectSelect.innerHTML = '<option value="">-- First select Year/Semester --</option>';
+    subjectSelect.disabled = true;
+
+    if (!program) {
+      semesterSelect.disabled = true;
+      return;
+    }
+
+    semesterSelect.disabled = false;
+
+    if (program.includes("PUC")) {
+      // PU programs have years: 1st Year, 2nd Year
+      if (program.startsWith("I PUC")) {
+        addOption(semesterSelect, "1", "1st Year");
+      } else if (program.startsWith("II PUC")) {
+        addOption(semesterSelect, "2", "2nd Year");
+      }
+    } else {
+      // Degree programs: semesters 1 to 6
+      for (let i = 1; i <= 6; i++) {
+        addOption(semesterSelect, i, i + " Semester");
+      }
+    }
+  }
+
+  function addOption(select, value, text) {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = text;
+    select.appendChild(opt);
+  }
+
+  function updateSubjects() {
+    const program = programSelect.value;
+    const sem = semesterSelect.value;
+    subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+    subjectSelect.disabled = true;
+    if (!program || !sem) return;
+
+    const key = `${program}_${sem}`;
+    let subjects = subjectMap[key];
+    if (!subjects) {
+      subjects = ["General", "Elective"];
+    }
+    subjects.forEach(sub => {
+      const opt = document.createElement("option");
+      opt.value = sub;
+      opt.textContent = sub;
+      subjectSelect.appendChild(opt);
+    });
+    subjectSelect.disabled = false;
+  }
+
+  programSelect.addEventListener("change", () => {
+    updateSemesterOptions();
+    updateSubjects();
+  });
+  semesterSelect.addEventListener("change", updateSubjects);
+
+  // initial call
+  updateSemesterOptions();
+
+  // --------------------------------------------------------------
+  // 3. LOAD BOOKS FROM books.json
+  // --------------------------------------------------------------
+  let booksDB = [];
+
+  async function loadBooks() {
+    try {
+      const response = await fetch('books.json');
+      if (!response.ok) throw new Error('books.json not found');
+      booksDB = await response.json();
+      console.log(`Loaded ${booksDB.length} books.`);
+      renderBooks(); // initial render (if any default selection)
+    } catch (err) {
+      console.error(err);
+      document.getElementById("booksGrid").innerHTML = `<div class="empty-message">⚠️ Could not load books.json. Make sure the file exists and is valid JSON.</div>`;
+    }
+  }
+
+  // --------------------------------------------------------------
+  // 4. RENDER BOOKS (filter by program, semester, subject)
+  // --------------------------------------------------------------
+  function renderBooks() {
+    const program = programSelect.value;
+    const semester = semesterSelect.value;
+    const subject = subjectSelect.value;
+    if (!program || !semester || !subject) {
+      document.getElementById("booksGrid").innerHTML = `<div class="empty-message">Please select Program, Year/Semester and Subject.</div>`;
+      return;
+    }
+    const filtered = booksDB.filter(book => 
+      book.program === program && 
+      String(book.semester) === semester && 
+      book.subject === subject
+    );
+    const grid = document.getElementById("booksGrid");
+    if (filtered.length === 0) {
+      grid.innerHTML = `<div class="empty-message">📭 No books found for ${program} - ${semester} - ${subject}.<br>Add entries in books.json.</div>`;
+      return;
+    }
+    grid.innerHTML = "";
+    filtered.forEach(book => {
+      const card = document.createElement("div");
+      card.className = "book-card";
+      const coverImg = (book.pages && book.pages.length) ? book.pages[0] : "https://via.placeholder.com/160x210?text=No+Cover";
+      card.innerHTML = `
+        <div class="book-cover"><img src="${coverImg}" alt="${book.title}"></div>
+        <div class="book-info">
+          <div class="book-title">${book.title}</div>
+          <div class="book-author">${book.author}</div>
+        </div>
+      `;
+      card.addEventListener("click", () => openFlipbook(book));
+      grid.appendChild(card);
+    });
+  }
+
+  document.getElementById("goBtn").addEventListener("click", renderBooks);
+
+  // --------------------------------------------------------------
+  // 5. FLIPBOOK MODAL (unlimited pages)
+  // --------------------------------------------------------------
+  let currentPages = [];
+  let currentIndex = 0;
+  const flipModal = document.getElementById("flipbookModal");
+  const flipImage = document.getElementById("flipImage");
+  const pageIndicatorSpan = document.getElementById("pageIndicator");
+
+  function openFlipbook(book) {
+    if (!book.pages || book.pages.length === 0) {
+      alert("This book has no page images yet.");
+      return;
+    }
+    currentPages = book.pages;
+    currentIndex = 0;
+    document.getElementById("modalBookTitle").innerHTML = `<i class="fas fa-book"></i> ${book.title} · ${book.subject}`;
+    updateFlipImage();
+    flipModal.classList.add("active");
+  }
+
+  function updateFlipImage() {
+    flipImage.src = currentPages[currentIndex];
+    pageIndicatorSpan.innerHTML = `📄 Page ${currentIndex+1} of ${currentPages.length}`;
+    flipImage.style.transform = "scale(0.98)";
+    setTimeout(() => flipImage.style.transform = "scale(1)", 120);
+  }
+
+  function nextImage() { currentIndex = (currentIndex + 1) % currentPages.length; updateFlipImage(); }
+  function prevImage() { currentIndex = (currentIndex - 1 + currentPages.length) % currentPages.length; updateFlipImage(); }
+
+  document.getElementById("nextImgBtn").addEventListener("click", nextImage);
+  document.getElementById("prevImgBtn").addEventListener("click", prevImage);
+  document.getElementById("closeFlipBtn").addEventListener("click", () => flipModal.classList.remove("active"));
+  flipModal.addEventListener("click", (e) => { if (e.target === flipModal) flipModal.classList.remove("active"); });
+
+  // Touch swipe for mobile
+  let touchStartX = 0;
+  flipImage.addEventListener("touchstart", (e) => { touchStartX = e.changedTouches[0].screenX; });
+  flipImage.addEventListener("touchend", (e) => {
+    let endX = e.changedTouches[0].screenX;
+    if (endX < touchStartX - 40) nextImage();
+    if (endX > touchStartX + 40) prevImage();
+  });
+
+  // --------------------------------------------------------------
+  // 6. SPLASH SCREEN (3 seconds)
+  // --------------------------------------------------------------
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      const splash = document.getElementById("splash");
+      splash.style.opacity = "0";
+      setTimeout(() => {
+        splash.style.display = "none";
+        document.getElementById("mainApp").classList.add("visible");
+      }, 600);
+    }, 3000);
+    loadBooks(); // fetch books after splash
+  });
+
+  // Social links (replace with actual URLs)
+  document.getElementById("instaLink").href = "https://instagram.com/yourcollege";
+  document.getElementById("fbLink").href = "https://facebook.com/yourcollege";
+  document.getElementById("linkedinLink").href = "https://linkedin.com/school/yourcollege";
+  document.getElementById("devLink").href = "#"; // replace with your portfolio
+</script>
+</body>
+</html>

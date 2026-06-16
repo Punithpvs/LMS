@@ -1,0 +1,31 @@
+
+[
+  {
+    "id": 1,
+    "program": "BCom",
+    "semester": "1",
+    "subject": "FUNDAMENTALS OF FINANCIAL ACCOUNTING",
+    "title": "Financial Accounting I",
+    "author": "T.S. Grewal",
+    "pages": [
+      "https://i.ibb.co/VWhk32np/IMG20260615191233.jpg",
+      "https://i.ibb.co/PGz8KVvz/IMG20260615191300.jpg",
+      "https://i.ibb.co/qYRDk9SS/IMG20260615191308.jpg"
+
+    ]
+  },
+  {
+    "id": 2,
+    "program": "BCom",
+    "semester": "1",
+    "subject": "FUNDAMENTALS OF FINANCIAL ACCOUNTING",
+    "title": "Corporate Accounting",
+    "author": "S.N. Maheshwari",
+    "pages": [
+       "https://i.ibb.co/VWhk32np/IMG20260615191233.jpg",
+      "https://i.ibb.co/PGz8KVvz/IMG20260615191300.jpg",
+      "https://i.ibb.co/qYRDk9SS/IMG20260615191308.jpg"
+
+    ]
+  }
+]
