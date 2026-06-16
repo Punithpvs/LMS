@@ -3,395 +3,879 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>MYCAS Library | Smart Book Recommender</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>MYCAS Central Library</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
+    :root {
+      --ink: #0f1c2e;
+      --ink-mid: #1a2f45;
+      --gold: #c9a84c;
+      --gold-light: #e8c96a;
+      --gold-pale: #f5e9c8;
+      --cream: #faf7f2;
+      --cream-deep: #f0ebe0;
+      --slate: #4a6070;
+      --slate-light: #7a95a8;
+      --white: #ffffff;
+      --border: rgba(201,168,76,0.25);
+      --shadow-ink: 0 20px 60px rgba(15,28,46,0.25);
+      --shadow-gold: 0 8px 32px rgba(201,168,76,0.2);
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background: linear-gradient(145deg, #f0f7fc 0%, #e9f0f5 100%); color: #1a2c3c; overflow-x: hidden; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
 
-    /* Splash screen */
-    .splash-screen {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #0a2f3f; display: flex; justify-content: center; align-items: center;
-      z-index: 9999; transition: opacity 0.6s ease;
+    /* ─── SPLASH ─── */
+    .splash {
+      position: fixed; inset: 0;
+      background: var(--ink);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.8s ease;
     }
-    .splash-logo {
-      width: 150px; height: 150px; background: white; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;
-      box-shadow: 0 20px 35px rgba(0,0,0,0.3); overflow: hidden;
+    .splash-ring {
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 28px;
+      box-shadow: 0 0 0 8px rgba(201,168,76,0.08), 0 0 0 20px rgba(201,168,76,0.04);
+      animation: ringPulse 2s ease-in-out infinite alternate;
+      overflow: hidden;
     }
-    .splash-logo img { width: 100%; height: 100%; object-fit: cover; }
-    .splash-content h2 { color: white; font-weight: 600; text-align: center; }
-    @keyframes pulse { 0% { transform: scale(0.98); opacity: 0.8; } 100% { transform: scale(1.05); opacity: 1; } }
-    .splash-content { animation: pulse 1.2s infinite alternate; text-align: center; }
-    .main-content { display: none; opacity: 0; transition: opacity 0.5s; }
+    .splash-ring img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    @keyframes ringPulse {
+      from { box-shadow: 0 0 0 8px rgba(201,168,76,0.08), 0 0 0 20px rgba(201,168,76,0.04); }
+      to { box-shadow: 0 0 0 12px rgba(201,168,76,0.15), 0 0 0 28px rgba(201,168,76,0.06); }
+    }
+    .splash-rule {
+      width: 48px; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 0 auto 20px;
+    }
+    .splash h2 {
+      font-family: 'Playfair Display', serif;
+      color: var(--white); font-size: 1.8rem; font-weight: 700;
+      letter-spacing: 0.04em; text-align: center;
+      animation: fadeUp 1s ease 0.3s both;
+    }
+    .splash p {
+      color: var(--gold); font-size: 0.72rem;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      margin-top: 10px; text-align: center;
+      animation: fadeUp 1s ease 0.5s both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .loading-dots { display: flex; gap: 8px; margin-top: 32px; justify-content: center; }
+    .loading-dots span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--gold); opacity: 0.3;
+      animation: dot 1.4s ease-in-out infinite;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dot { 0%,80%,100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.2); } }
+
+    /* ─── MAIN CONTENT ─── */
+    .main-content { display: none; opacity: 0; transition: opacity 0.6s; }
     .main-content.visible { display: block; opacity: 1; }
 
-    /* Header */
+    /* ─── HEADER ─── */
     .library-header {
-      background: rgba(10, 47, 63, 0.95); backdrop-filter: blur(12px); color: white;
-      padding: 0.8rem 2rem; display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      background: var(--ink);
+      padding: 0;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 4px 30px rgba(15,28,46,0.4);
     }
-    .circle-logo {
-      width: 65px; height: 65px; background: white; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    .header-top-bar {
+      background: var(--gold);
+      text-align: center;
+      padding: 6px 2rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink);
+      font-weight: 600;
     }
-    .circle-logo img { width: 100%; height: 100%; object-fit: cover; }
-    .header-text h1 { font-size: 1.7rem; }
-    .header-text p { font-size: 0.8rem; opacity: 0.85; }
+    .header-inner {
+      display: flex; align-items: center; gap: 1.4rem;
+      padding: 1rem 2.5rem;
+      border-bottom: 1px solid rgba(201,168,76,0.2);
+    }
+    .header-logo-wrap {
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      padding: 3px;
+      flex-shrink: 0;
+    }
+    .header-logo-wrap img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+    .header-title { flex: 1; }
+    .header-eyebrow {
+      font-size: 0.62rem; letter-spacing: 0.25em; text-transform: uppercase;
+      color: var(--gold); font-weight: 600; margin-bottom: 3px;
+    }
+    .header-name {
+      font-family: 'Playfair Display', serif;
+      color: var(--white); font-size: 1.5rem; font-weight: 700;
+      line-height: 1.1;
+    }
+    .header-subtitle {
+      font-size: 0.68rem; color: var(--slate-light);
+      letter-spacing: 0.08em; margin-top: 3px;
+      text-transform: uppercase;
+    }
+    .header-badge {
+      background: rgba(201,168,76,0.12);
+      border: 1px solid var(--border);
+      border-radius: 32px;
+      padding: 8px 18px;
+      color: var(--gold-light);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .header-badge .dot {
+      width: 7px; height: 7px;
+      background: var(--gold); border-radius: 50%;
+      animation: dot 2s ease-in-out infinite;
+    }
 
-    /* Filter panel */
-    .filter-panel {
-      background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); margin: 2rem 2rem 0.5rem 2rem;
-      padding: 1.4rem 2rem; border-radius: 48px; display: flex; flex-wrap: wrap;
-      align-items: flex-end; gap: 20px; justify-content: space-between;
+    /* ─── HERO BAND ─── */
+    .hero-band {
+      background: linear-gradient(135deg, var(--ink-mid) 0%, #0d2438 100%);
+      padding: 3.5rem 2.5rem;
+      position: relative; overflow: hidden;
+      border-bottom: 1px solid var(--border);
     }
-    .filters { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
-    .filter-group { display: flex; flex-direction: column; gap: 6px; }
-    .filter-group label { font-weight: 700; color: #1a4f64; font-size: 0.8rem; }
-    select, .go-btn {
-      padding: 12px 22px; border-radius: 44px; border: 1px solid rgba(0,0,0,0.1);
-      font-family: inherit; font-weight: 500; background: white; cursor: pointer;
+    .hero-band::before {
+      content: '"';
+      font-family: 'Playfair Display', serif;
+      font-size: 28rem; color: rgba(201,168,76,0.04);
+      position: absolute; right: -4rem; top: -8rem;
+      line-height: 1; pointer-events: none; user-select: none;
     }
-    select { min-width: 190px; }
+    .hero-grid { display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center; }
+    .hero-kicker {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(201,168,76,0.12);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 4px;
+      padding: 6px 14px;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+    }
+    .hero-kicker::before { content: ''; width: 20px; height: 1px; background: var(--gold); }
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      color: var(--white);
+      line-height: 1.15;
+      font-weight: 700;
+    }
+    .hero-title em { color: var(--gold); font-style: italic; }
+    .hero-desc {
+      color: var(--slate-light);
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      max-width: 480px;
+    }
+    .hero-stats {
+      display: flex; gap: 2.5rem; margin-top: 2rem;
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem; font-weight: 900;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.65rem; color: var(--slate-light);
+      letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px;
+    }
+    .hero-decoration {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .spine {
+      width: 32px; border-radius: 4px;
+      background: linear-gradient(180deg, var(--gold) 0%, #8a6a20 100%);
+      box-shadow: 3px 3px 8px rgba(0,0,0,0.4);
+    }
+
+    /* ─── FILTER SECTION ─── */
+    .filter-section { padding: 2rem 2.5rem; background: var(--cream); }
+    .filter-card {
+      background: var(--white);
+      border: 1px solid rgba(15,28,46,0.1);
+      border-top: 4px solid var(--gold);
+      border-radius: 4px 4px 12px 12px;
+      padding: 2rem 2.5rem;
+      box-shadow: var(--shadow-ink);
+    }
+    .filter-heading {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--ink); margin-bottom: 1.6rem;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .filter-heading::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(15,28,46,0.12), transparent);
+    }
+    .filter-row {
+      display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-end;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; }
+    .filter-label {
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--slate);
+    }
+    .filter-select {
+      appearance: none;
+      background: var(--cream) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M6 8L0 0h12z' fill='%234a6070'/%3E%3C/svg%3E") no-repeat right 14px center;
+      border: 1.5px solid rgba(15,28,46,0.15);
+      border-radius: 6px;
+      padding: 11px 36px 11px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      color: var(--ink);
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .filter-select:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); }
+    .filter-select:disabled { opacity: 0.5; cursor: not-allowed; }
     .go-btn {
-      background: #195f74; color: white; border: none; padding: 12px 36px;
-      display: inline-flex; align-items: center; gap: 8px; font-weight: 700;
+      background: var(--ink);
+      color: var(--gold);
+      border: none;
+      border-radius: 6px;
+      padding: 11px 32px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 10px;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      white-space: nowrap;
     }
-    .go-btn:hover { background: #0e4656; transform: scale(0.97); }
+    .go-btn:hover { background: #0d2438; transform: translateY(-1px); box-shadow: var(--shadow-gold); }
+    .go-btn:active { transform: translateY(0); }
+    .go-btn i { font-size: 0.8rem; }
 
-    /* Books grid */
-    .books-section { margin: 2rem 2rem 3rem; }
-    .section-title { font-size: 1.8rem; font-weight: 800; border-left: 6px solid #195f74; padding-left: 20px; margin-bottom: 1.8rem; }
-    .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2rem; justify-items: center; }
+    /* ─── BOOKS SECTION ─── */
+    .books-section { padding: 0 2.5rem 4rem; }
+    .section-header {
+      display: flex; align-items: baseline; gap: 1.5rem;
+      margin-bottom: 2rem; padding-top: 1rem;
+      border-top: 1px solid rgba(15,28,46,0.08);
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem; font-weight: 700;
+      color: var(--ink);
+    }
+    .book-count {
+      font-size: 0.72rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--slate-light);
+    }
+    .books-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 2rem;
+    }
+
+    /* ─── BOOK CARD ─── */
     .book-card {
-      background: white; border-radius: 32px; width: 100%; max-width: 250px; overflow: hidden;
-      transition: 0.25s ease; box-shadow: 0 18px 30px rgba(0,0,0,0.08); cursor: pointer;
+      background: var(--white);
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      box-shadow: 0 4px 16px rgba(15,28,46,0.08);
+      border: 1px solid rgba(15,28,46,0.07);
+      position: relative;
     }
-    .book-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 25px 40px rgba(0,0,0,0.15); }
-    .book-cover { background: #fefaf5; padding: 1.8rem 1rem; display: flex; justify-content: center; min-height: 240px; }
-    .book-cover img { width: 100%; max-width: 160px; border-radius: 16px; box-shadow: 0 12px 20px rgba(0,0,0,0.2); aspect-ratio: 3/4; object-fit: cover; }
-    .book-info { padding: 1rem; text-align: center; }
-    .book-title { font-weight: 800; font-size: 1rem; }
-    .book-author { font-size: 0.75rem; color: #6c8d9c; margin-top: 4px; }
-
-    /* Flipbook modal (unlimited pages) */
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+    .book-card::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: var(--gold);
+      transform: scaleY(0);
+      transition: transform 0.3s ease;
+      transform-origin: bottom;
+    }
+    .book-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(15,28,46,0.15); }
+    .book-card:hover::before { transform: scaleY(1); }
+    .book-cover {
+      background: var(--cream-deep);
+      padding: 2rem 1.2rem 1.2rem;
+      display: flex; justify-content: center;
+      position: relative;
+      min-height: 220px;
+    }
+    .book-cover::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 30px;
+      background: linear-gradient(transparent, rgba(240,235,224,0.8));
+    }
+    .book-cover img {
+      width: 120px; height: 165px;
+      object-fit: cover;
+      border-radius: 2px 8px 8px 2px;
+      box-shadow: 6px 6px 20px rgba(15,28,46,0.25), -2px 0 6px rgba(15,28,46,0.1);
+    }
+    .book-info { padding: 1.1rem 1rem 1.2rem; }
+    .book-subject-tag {
+      display: inline-block;
+      background: rgba(201,168,76,0.1);
+      border: 1px solid rgba(201,168,76,0.3);
+      color: #8a6a20;
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 3px;
+      margin-bottom: 7px;
+    }
+    .book-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem; font-weight: 700;
+      color: var(--ink); line-height: 1.3;
+      margin-bottom: 5px;
+    }
+    .book-author {
+      font-size: 0.72rem; color: var(--slate-light);
+      font-style: italic;
+    }
+    .book-card-footer {
+      padding: 0.7rem 1rem;
+      border-top: 1px solid rgba(15,28,46,0.06);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .preview-label {
+      font-size: 0.65rem; color: var(--gold);
+      letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;
+    }
+    .preview-icon {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--ink); color: var(--gold);
       display: flex; align-items: center; justify-content: center;
-      visibility: hidden; opacity: 0; transition: 0.25s; z-index: 10000;
+      font-size: 0.65rem;
+    }
+
+    /* ─── EMPTY / ERROR STATE ─── */
+    .empty-state {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 4rem 2rem;
+      border: 1px dashed rgba(201,168,76,0.4);
+      border-radius: 12px;
+      background: rgba(201,168,76,0.04);
+    }
+    .empty-icon {
+      font-size: 3rem; margin-bottom: 1rem;
+      color: var(--gold); opacity: 0.5;
+    }
+    .empty-state h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem; color: var(--ink); margin-bottom: 0.5rem;
+    }
+    .empty-state p { font-size: 0.85rem; color: var(--slate-light); line-height: 1.7; }
+
+    /* ─── FLIPBOOK MODAL ─── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(10, 20, 32, 0.92);
+      backdrop-filter: blur(16px);
+      display: flex; align-items: center; justify-content: center;
+      visibility: hidden; opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 10000;
+      padding: 1rem;
     }
     .modal-overlay.active { visibility: visible; opacity: 1; }
     .flipbook-container {
-      background: #1e2f3a; width: 90%; max-width: 750px; border-radius: 48px; padding: 1.2rem;
-      box-shadow: 0 30px 50px rgba(0,0,0,0.5);
+      background: var(--ink);
+      border: 1px solid rgba(201,168,76,0.2);
+      width: 100%; max-width: 700px;
+      border-radius: 16px;
+      padding: 1.8rem;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
     }
-    .flipbook-header { display: flex; justify-content: space-between; align-items: center; color: white; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px; }
-    .close-flipbook { background: none; border: none; font-size: 1.8rem; color: white; cursor: pointer; }
-    .carousel-area { position: relative; display: flex; align-items: center; justify-content: center; min-height: 420px; }
-    .flip-img { width: 100%; max-width: 380px; border-radius: 24px; box-shadow: 0 20px 35px rgba(0,0,0,0.3); transition: transform 0.2s; background: #f9f3ea; cursor: pointer; }
+    .modal-overlay.active .flipbook-container { transform: translateY(0); }
+    .flipbook-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.2rem;
+      border-bottom: 1px solid rgba(201,168,76,0.2);
+    }
+    .flipbook-title {
+      font-family: 'Playfair Display', serif;
+      color: var(--white); font-size: 1.1rem;
+    }
+    .flipbook-subtitle { color: var(--gold); font-size: 0.72rem; margin-top: 4px; letter-spacing: 0.08em; }
+    .close-btn {
+      background: rgba(255,255,255,0.08); border: none;
+      width: 36px; height: 36px; border-radius: 50%;
+      color: var(--white); cursor: pointer; font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .close-btn:hover { background: rgba(255,255,255,0.15); }
+    .carousel-area {
+      position: relative; display: flex; align-items: center; justify-content: center;
+      min-height: 400px; gap: 1rem;
+    }
+    .flip-img {
+      max-width: 340px; width: 100%;
+      border-radius: 4px 12px 12px 4px;
+      box-shadow: 8px 8px 30px rgba(0,0,0,0.4), -3px 0 10px rgba(0,0,0,0.2);
+      transition: transform 0.15s ease;
+      cursor: pointer;
+    }
     .nav-arrow {
-      background: rgba(0,0,0,0.5); border: none; font-size: 2.2rem; color: white;
-      width: 48px; height: 48px; border-radius: 60px; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.25);
+      color: var(--gold-light); width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 1rem;
+      transition: background 0.2s, transform 0.15s;
+      flex-shrink: 0;
     }
-    .nav-left { left: 10px; }
-    .nav-right { right: 10px; }
-    .nav-arrow:hover { background: #195f74; transform: translateY(-50%) scale(1.05); }
-    .page-indicator { text-align: center; margin-top: 20px; color: #ddd; font-weight: 500; }
-    @media (max-width: 600px) {
+    .nav-arrow:hover { background: rgba(201,168,76,0.25); transform: scale(1.08); }
+    .page-indicator {
+      text-align: center; margin-top: 1.2rem;
+      color: var(--slate-light); font-size: 0.8rem;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+    }
+    .page-dots { display: flex; gap: 6px; }
+    .page-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(201,168,76,0.3);
+      transition: background 0.2s, transform 0.2s;
+    }
+    .page-dot.active { background: var(--gold); transform: scale(1.3); }
+
+    /* ─── FOOTER ─── */
+    .footer {
+      background: var(--ink);
+      padding: 3rem 2.5rem 2rem;
+      border-top: 1px solid rgba(201,168,76,0.2);
+    }
+    .footer-inner {
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 2rem; align-items: start;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 1.5rem;
+    }
+    .footer-brand h3 {
+      font-family: 'Playfair Display', serif;
+      color: var(--white); font-size: 1.3rem; margin-bottom: 6px;
+    }
+    .footer-brand p { color: var(--slate-light); font-size: 0.8rem; line-height: 1.7; max-width: 320px; }
+    .footer-socials { display: flex; gap: 12px; }
+    .social-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--slate-light);
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .social-btn:hover { background: rgba(201,168,76,0.15); border-color: var(--gold); color: var(--gold); transform: translateY(-2px); }
+    .footer-bottom {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 1rem;
+    }
+    .footer-copy { color: var(--slate-light); font-size: 0.75rem; }
+    .footer-link { color: var(--gold); text-decoration: none; font-size: 0.75rem; }
+    .footer-link:hover { text-decoration: underline; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 700px) {
+      .header-inner { padding: 0.8rem 1.2rem; }
+      .header-badge { display: none; }
+      .hero-band { padding: 2rem 1.2rem; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-decoration { display: none; }
+      .hero-stats { gap: 1.5rem; }
+      .filter-section { padding: 1.2rem; }
+      .filter-card { padding: 1.5rem; }
+      .books-section { padding: 0 1.2rem 3rem; }
+      .footer { padding: 2rem 1.2rem; }
+      .footer-inner { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; text-align: center; }
       .flip-img { max-width: 260px; }
-      .nav-arrow { width: 38px; height: 38px; font-size: 1.4rem; }
-      .filter-panel { margin: 1rem; padding: 1rem; }
-      .books-section { margin: 1rem; }
     }
 
-    /* Footer */
-    .footer { background: #0a2f3f; color: #efefef; padding: 2rem; margin-top: 3rem; text-align: center; }
-    .social-icons { display: flex; justify-content: center; gap: 2rem; margin-bottom: 1rem; }
-    .social-icons a { color: white; font-size: 1.8rem; transition: 0.2s; }
-    .social-icons a:hover { transform: scale(1.1); color: #ffda88; }
-    .footer-links a { color: #ffda88; text-decoration: none; }
-    .empty-message { grid-column: 1/-1; text-align: center; padding: 3rem; background: #fff3e0; border-radius: 48px; }
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
   </style>
 </head>
 <body>
 
-<div id="splash" class="splash-screen">
-  <div class="splash-content">
-    <div class="splash-logo">
-      <!-- REPLACE 'logo.png' WITH YOUR ACTUAL LOGO PATH -->
-      <img src="logo.jpg" alt="College Logo">
-    </div>
-    <h2>MYCAS Central Library</h2>
-    <p style="color: #ccc; margin-top: 10px;">Empowering knowledge</p>
+<!-- SPLASH -->
+<div id="splash" class="splash">
+  <div class="splash-ring">
+    <img src="logo.jpg" alt="MYCAS Logo">
+  </div>
+  <div class="splash-rule"></div>
+  <h2>MYCAS Central Library</h2>
+  <p>Empowering Knowledge, Inspiring Excellence</p>
+  <div class="loading-dots">
+    <span></span><span></span><span></span>
   </div>
 </div>
 
+<!-- MAIN APP -->
 <div id="mainApp" class="main-content">
+
+  <!-- HEADER -->
   <header class="library-header">
-    <div class="circle-logo">
-      <!-- SAME LOGO IMAGE PATH -->
-      <img src="logo.jpg" alt="College Logo">
+    <div class="header-top-bar">
+      Mysore Institute of Commerce, Arts &amp; Science — Central Library
     </div>
-    <div class="header-text">
-      <h1>🏛️ MYCAS</h1>
-      <p>MYSORE INSTITUTE OF COMMERCE, ARTS & SCIENCE</p>
+    <div class="header-inner">
+      <div class="header-logo-wrap">
+        <img src="logo.jpg" alt="MYCAS Logo">
+      </div>
+      <div class="header-title">
+        <div class="header-eyebrow">Est. Library Portal</div>
+        <div class="header-name">MYCAS Library</div>
+        <div class="header-subtitle">Smart Book Recommender</div>
+      </div>
+      <div class="header-badge">
+        <span class="dot"></span>
+        Open · Resource Hub
+      </div>
     </div>
   </header>
 
-  <div class="filter-panel">
-    <div class="filters">
-      <div class="filter-group">
-        <label>📘 Program</label>
-        <select id="programSelect">
-          <option value="">-- Select Program --</option>
-          <option value="I PUC Commerce">I PUC Commerce</option>
-          <option value="II PUC Commerce">II PUC Commerce</option>
-          <option value="I PUC Science">I PUC Science</option>
-          <option value="II PUC Science">II PUC Science</option>
-          <option value="BCom">BCom</option>
-          <option value="BCA">BCA</option>
-          <option value="BBA">BBA</option>
-          <option value="BCom FM">BCom FM</option>
-        </select>
+  <!-- HERO -->
+  <section class="hero-band">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-kicker">Academic Book Finder</div>
+        <h1 class="hero-title">
+          Find the right books<br>for your <em>course</em>
+        </h1>
+        <p class="hero-desc">
+          Select your program, semester, and subject to discover curated books and preview them page by page — right here in the library portal.
+        </p>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-num">8+</div>
+            <div class="stat-label">Programs</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">6</div>
+            <div class="stat-label">Semesters</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">∞</div>
+            <div class="stat-label">Pages to Explore</div>
+          </div>
+        </div>
       </div>
-      <div class="filter-group">
-        <label>📅 Year / Semester</label>
-        <select id="semesterSelect" disabled>
-          <option value="">-- First select Program --</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>📖 Subject</label>
-        <select id="subjectSelect" disabled>
-          <option value="">-- First select Year/Semester --</option>
-        </select>
+      <div class="hero-decoration" aria-hidden="true">
+        <div class="spine" style="height: 90px; opacity: 0.9;"></div>
+        <div class="spine" style="height: 70px; background: linear-gradient(180deg, #8a6a20, #5a4410); opacity: 0.6;"></div>
+        <div class="spine" style="height: 110px; opacity: 0.75;"></div>
+        <div class="spine" style="height: 60px; background: linear-gradient(180deg, #6b8f6e, #3d5e40); opacity: 0.5;"></div>
+        <div class="spine" style="height: 85px; background: linear-gradient(180deg, #7a6090, #4a3a60); opacity: 0.55;"></div>
       </div>
     </div>
-    <button class="go-btn" id="goBtn"><i class="fas fa-search"></i> Go → Show Books</button>
-  </div>
-
-  <section class="books-section">
-    <div class="section-title"><i class="fas fa-bookmark"></i> Recommended Books</div>
-    <div id="booksGrid" class="books-grid"></div>
   </section>
 
-  <footer class="footer">
-    <div class="social-icons">
-      <a href="#" id="instaLink" target="_blank"><i class="fab fa-instagram"></i></a>
-      <a href="#" id="fbLink" target="_blank"><i class="fab fa-facebook-f"></i></a>
-      <a href="#" id="linkedinLink" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+  <!-- FILTER -->
+  <section class="filter-section">
+    <div class="filter-card">
+      <div class="filter-heading">
+        <i class="fas fa-sliders-h" style="color:var(--gold); font-size:0.9rem;"></i>
+        Select Your Course
+      </div>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">Program</label>
+          <select id="programSelect" class="filter-select">
+            <option value="">Choose program…</option>
+            <option value="I PUC Commerce">I PUC Commerce</option>
+            <option value="II PUC Commerce">II PUC Commerce</option>
+            <option value="I PUC Science">I PUC Science</option>
+            <option value="II PUC Science">II PUC Science</option>
+            <option value="BCom">BCom</option>
+            <option value="BCA">BCA</option>
+            <option value="BBA">BBA</option>
+            <option value="BCom FM">BCom FM</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Year / Semester</label>
+          <select id="semesterSelect" class="filter-select" disabled>
+            <option value="">Select program first…</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Subject</label>
+          <select id="subjectSelect" class="filter-select" disabled>
+            <option value="">Select year first…</option>
+          </select>
+        </div>
+        <button class="go-btn" id="goBtn">
+          <i class="fas fa-book-open"></i>
+          Show Books
+        </button>
+      </div>
     </div>
-    <div class="footer-links">
-      <p>© 2025 MYCAS Library | <a href="#" id="devLink">Developer Info</a></p>
+  </section>
+
+  <!-- BOOKS -->
+  <section class="books-section">
+    <div class="section-header">
+      <h2 class="section-title">Recommended Books</h2>
+      <span class="book-count" id="bookCount"></span>
+    </div>
+    <div id="booksGrid" class="books-grid">
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-books"></i></div>
+        <h3>Select a course above</h3>
+        <p>Choose your program, year/semester, and subject,<br>then click <strong>Show Books</strong> to see recommendations.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <h3>MYCAS Library</h3>
+        <p>Central Library, Mysore Institute of Commerce, Arts &amp; Science. Empowering students with curated academic resources since establishment.</p>
+      </div>
+      <div class="footer-socials">
+        <a href="https://instagram.com/yourcollege" id="instaLink" target="_blank" class="social-btn" aria-label="Instagram">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="https://facebook.com/yourcollege" id="fbLink" target="_blank" class="social-btn" aria-label="Facebook">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+        <a href="https://linkedin.com/school/yourcollege" id="linkedinLink" target="_blank" class="social-btn" aria-label="LinkedIn">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2025 MYCAS Central Library. All rights reserved.</p>
+      <a href="#" id="devLink" class="footer-link">Developer Info</a>
     </div>
   </footer>
 </div>
 
+<!-- FLIPBOOK MODAL -->
 <div id="flipbookModal" class="modal-overlay">
   <div class="flipbook-container">
     <div class="flipbook-header">
-      <h3 id="modalBookTitle">📖 Book Preview</h3>
-      <button class="close-flipbook" id="closeFlipBtn"><i class="fas fa-times-circle"></i></button>
+      <div>
+        <div class="flipbook-title" id="modalBookTitle">Book Preview</div>
+        <div class="flipbook-subtitle" id="modalBookSub"></div>
+      </div>
+      <button class="close-btn" id="closeFlipBtn" aria-label="Close"><i class="fas fa-times"></i></button>
     </div>
     <div class="carousel-area">
-      <button class="nav-arrow nav-left" id="prevImgBtn"><i class="fas fa-chevron-left"></i></button>
-      <img id="flipImage" class="flip-img" src="" alt="book page">
-      <button class="nav-arrow nav-right" id="nextImgBtn"><i class="fas fa-chevron-right"></i></button>
+      <button class="nav-arrow" id="prevImgBtn" aria-label="Previous page">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <img id="flipImage" class="flip-img" src="" alt="Book page preview">
+      <button class="nav-arrow" id="nextImgBtn" aria-label="Next page">
+        <i class="fas fa-chevron-right"></i>
+      </button>
     </div>
-    <div class="page-indicator" id="pageIndicator">Page 1</div>
+    <div class="page-indicator">
+      <span id="pageIndicator">Page 1</span>
+      <div class="page-dots" id="pageDots"></div>
+    </div>
   </div>
 </div>
 
 <script>
-  // --------------------------------------------------------------
-  // 1. SUBJECT MAPPING (Program + Semester/Year -> Subject List)
-  // --------------------------------------------------------------
+  // ── SUBJECT MAP ──────────────────────────────────────────────
   const subjectMap = {
-    // I PUC Commerce (1st Year)
-    "I PUC Commerce_1": ["Kannada", "English", "Economics", "Business Studies", "Accountancy", "Computer Science"],
-    // II PUC Commerce (2nd Year)
-    "II PUC Commerce_2": ["Kannada", "English", "Economics", "Business Studies", "Accountancy", "Computer Science"],
-    // I PUC Science (1st Year)
-    "I PUC Science_1": ["Kannada", "English", "Physics", "Chemistry", "Mathematics", "Biology", "Computer Science"],
-    // II PUC Science (2nd Year)
-    "II PUC Science_2": ["Kannada", "English", "Physics", "Chemistry", "Mathematics", "Biology", "Computer Science"],
-
-    // BCom (semesters 1 to 6)
-    "BCom_1": ["FUNDAMENTALS OF FINANCIAL ACCOUNTING", "BUSINESS MATHEMATICS", "BANKING LAW AND PRACTICE", "KANNADA", "ENGLISH", "CONSTITUTIONAL VALUE"],
-    "BCom_2": ["ADVANCED FINANCIAL ACCOUNTING", "FUNDAMENTALS OF COS ACCOUNTING", "COMPANY LAW AND PRACTICE", "KANNADA", "ENGLISH", "CONSTITUTIONAL VALUE"],
-    "BCom_3": ["FUNDAMENTALS CORPORATE ACCOUNTING OF", "INCOME TAX LAW & PRACTICE - I", "ADVANCED ACCOUNTING", "COST", "ELECTIVE", "ELECTIVE"],
-    "BCom_4": ["ADVANCED CORPORATE ACCOUNTING", "INCOME TAX LAW & PRACTICE - II", "BUSINESS STATSTICS", "ELECTIVE", "ENTREPRENEURSHIP DEVELOPMENT"],
-    "BCom_5": ["Business Law", "Human Resource Management", "Business Analysis", "Corporate Finance", "Assessment of Persons Other than Individuals", "Indian Accounting Standards-I", "Small Business Management", "Business Communication Skills"],
-    "BCom_6": ["Auditing", "Marketing Management", "Management Accounting", "Advanced Corporate Finance", "Goods and Services Tax", "Indian Accounting Standards-II", "Women and Social Entrepreneurship", "Startup Eco-System Skills"],
-
-    // BCA semesters 1-6
-    "BCA_1": ["Digital Computer Organization", "Office Automation and HTML", "Problem Solving using C++", "C++ Programming", "Mathematical and Statistical Computing", "Mathematical and Statistical Computing using R"],
-    "BCA_2": ["Data Structures", "Data Structures using C++", "Object Oriented Programming with Java", "Programming with Java", "Operating Systems", "Shell Programming"],
-    "BCA_3": ["C#.NET Programming", "C#.NET Programming Lab", "Data Base Management System", "DBMS Lab", "Web Technologies", "Web Technologies Lab", "Cyber Security", "Software Engineering", "System Software", "Cloud Computing", "Digital Image Processing", "E-Commerce and E-Governance"],
-    "BCA_4": ["Computer Networks", "Networking Lab", "Python Programming", "Python Programming Lab", "PHP & MySQL", "PHP & MySQL Lab", "Fundamentals of Data Science", "Internet of things", "Software Testing", "Digital Marketing"],
-    "BCA_5": ["Advanced Web Technologies", "Data Mining", "Big Data Analytics", "Mobile App Development", "Software Testing", "Cloud Computing"],
-    "BCA_6": ["Machine Learning", "Artificial Intelligence", "Cyber Security", "Project Work", "Internship", "Elective"],
-
-    // BBA semesters 1-6
-    "BBA_1": ["Language-I", "Language-II", "Principles & Practices of Management", "Fundamentals of Business Accounting", "Business Economics", "Business Communication", "Constitutional Values"],
-    "BBA_2": ["Language-I", "Language-II", "Organizational Behaviour", "Financial Accounting and Reporting", "Business Statistics", "Marketing Management", "Constitutional Values"],
-    "BBA_3": ["Language-I", "Language-II", "Cost Accounting", "Business Statistics II", "Business Environment", "Entrepreneurship and Startup Ecosystem", "Banking and Financial Services", "Digital Marketing"],
-    "BBA_4": ["Language-I", "Language-II", "Financial Management", "Human Resource Management", "Management Accounting", "Logistics and Supply Chain Management", "Business Analytics", "Information Technology For Business"],
-    "BBA_5": ["Production and Operations Management", "Business Research Methods", "Income Tax", "Specialization I", "Specialization I", "E-Commerce", "Digital Tools for Business Decisions", "ERP and CRM", "Advance Excel for Business"],
-    "BBA_6": ["Strategic Management", "Legal Framework for Business", "Goods and Services Tax", "Specialization II", "Specialization II", "Project Report"],
-
-    // BCom FM semesters 1-6
-    "BCom FM_1": ["English", "Kannada/French", "Fundamentals of Accounting", "Principles of Management", "Business Mathematics", "Monetary Economics", "Yoga", "Indian Banking Systems"],
-    "BCom FM_2": ["English", "Kannada/French", "Financial Accounting", "Logical Reasoning", "Environmental Studies", "Indian Financial System", "Current affairs", "IT for Managers"],
-    "BCom FM_3": ["English", "Kannada/French", "Cost Accounting", "Marketing Management", "Introduction to Financial Management", "Industrial and Organizational Psychology", "Artificial Intelligence and Business Intelligence", "Introduction to Financial Markets"],
-    "BCom FM_4": ["English", "Kannada/French", "Management Accounting", "Financial Decision", "Human Resource Management", "Constitution of India", "Introduction to Business and Commercial Law", "Basics of Securities Market"],
-    "BCom FM_5": ["Advanced Accounting-I", "Business Statistics", "Introduction to Entrepreneurship", "Research Methodology-1", "Direct Tax-I", "Fundamentals of FinTech and Digital marketing Analytics", "Fundamentals of Mutual Funds"],
-    "BCom FM_6": ["Advanced Accounting-II", "Startup Eco System", "Portfolio/Security Analysis", "Research Methodology-II", "Derivatives", "Direct Tax-II", "Introduction to R", "Tally"]
+    "I PUC Commerce_1": ["Kannada","English","Economics","Business Studies","Accountancy","Computer Science"],
+    "II PUC Commerce_2": ["Kannada","English","Economics","Business Studies","Accountancy","Computer Science"],
+    "I PUC Science_1": ["Kannada","English","Physics","Chemistry","Mathematics","Biology","Computer Science"],
+    "II PUC Science_2": ["Kannada","English","Physics","Chemistry","Mathematics","Biology","Computer Science"],
+    "BCom_1": ["FUNDAMENTALS OF FINANCIAL ACCOUNTING","BUSINESS MATHEMATICS","BANKING LAW AND PRACTICE","KANNADA","ENGLISH","CONSTITUTIONAL VALUE"],
+    "BCom_2": ["ADVANCED FINANCIAL ACCOUNTING","FUNDAMENTALS OF COS ACCOUNTING","COMPANY LAW AND PRACTICE","KANNADA","ENGLISH","CONSTITUTIONAL VALUE"],
+    "BCom_3": ["FUNDAMENTALS CORPORATE ACCOUNTING OF","INCOME TAX LAW & PRACTICE - I","ADVANCED ACCOUNTING","COST","ELECTIVE","ELECTIVE"],
+    "BCom_4": ["ADVANCED CORPORATE ACCOUNTING","INCOME TAX LAW & PRACTICE - II","BUSINESS STATSTICS","ELECTIVE","ENTREPRENEURSHIP DEVELOPMENT"],
+    "BCom_5": ["Business Law","Human Resource Management","Business Analysis","Corporate Finance","Assessment of Persons Other than Individuals","Indian Accounting Standards-I","Small Business Management","Business Communication Skills"],
+    "BCom_6": ["Auditing","Marketing Management","Management Accounting","Advanced Corporate Finance","Goods and Services Tax","Indian Accounting Standards-II","Women and Social Entrepreneurship","Startup Eco-System Skills"],
+    "BCA_1": ["Digital Computer Organization","Office Automation and HTML","Problem Solving using C++","C++ Programming","Mathematical and Statistical Computing","Mathematical and Statistical Computing using R"],
+    "BCA_2": ["Data Structures","Data Structures using C++","Object Oriented Programming with Java","Programming with Java","Operating Systems","Shell Programming"],
+    "BCA_3": ["C#.NET Programming","C#.NET Programming Lab","Data Base Management System","DBMS Lab","Web Technologies","Web Technologies Lab","Cyber Security","Software Engineering","System Software","Cloud Computing","Digital Image Processing","E-Commerce and E-Governance"],
+    "BCA_4": ["Computer Networks","Networking Lab","Python Programming","Python Programming Lab","PHP & MySQL","PHP & MySQL Lab","Fundamentals of Data Science","Internet of things","Software Testing","Digital Marketing"],
+    "BCA_5": ["Advanced Web Technologies","Data Mining","Big Data Analytics","Mobile App Development","Software Testing","Cloud Computing"],
+    "BCA_6": ["Machine Learning","Artificial Intelligence","Cyber Security","Project Work","Internship","Elective"],
+    "BBA_1": ["Language-I","Language-II","Principles & Practices of Management","Fundamentals of Business Accounting","Business Economics","Business Communication","Constitutional Values"],
+    "BBA_2": ["Language-I","Language-II","Organizational Behaviour","Financial Accounting and Reporting","Business Statistics","Marketing Management","Constitutional Values"],
+    "BBA_3": ["Language-I","Language-II","Cost Accounting","Business Statistics II","Business Environment","Entrepreneurship and Startup Ecosystem","Banking and Financial Services","Digital Marketing"],
+    "BBA_4": ["Language-I","Language-II","Financial Management","Human Resource Management","Management Accounting","Logistics and Supply Chain Management","Business Analytics","Information Technology For Business"],
+    "BBA_5": ["Production and Operations Management","Business Research Methods","Income Tax","Specialization I","Specialization I","E-Commerce","Digital Tools for Business Decisions","ERP and CRM","Advance Excel for Business"],
+    "BBA_6": ["Strategic Management","Legal Framework for Business","Goods and Services Tax","Specialization II","Specialization II","Project Report"],
+    "BCom FM_1": ["English","Kannada/French","Fundamentals of Accounting","Principles of Management","Business Mathematics","Monetary Economics","Yoga","Indian Banking Systems"],
+    "BCom FM_2": ["English","Kannada/French","Financial Accounting","Logical Reasoning","Environmental Studies","Indian Financial System","Current affairs","IT for Managers"],
+    "BCom FM_3": ["English","Kannada/French","Cost Accounting","Marketing Management","Introduction to Financial Management","Industrial and Organizational Psychology","Artificial Intelligence and Business Intelligence","Introduction to Financial Markets"],
+    "BCom FM_4": ["English","Kannada/French","Management Accounting","Financial Decision","Human Resource Management","Constitution of India","Introduction to Business and Commercial Law","Basics of Securities Market"],
+    "BCom FM_5": ["Advanced Accounting-I","Business Statistics","Introduction to Entrepreneurship","Research Methodology-1","Direct Tax-I","Fundamentals of FinTech and Digital marketing Analytics","Fundamentals of Mutual Funds"],
+    "BCom FM_6": ["Advanced Accounting-II","Startup Eco System","Portfolio/Security Analysis","Research Methodology-II","Derivatives","Direct Tax-II","Introduction to R","Tally"]
   };
 
-  // --------------------------------------------------------------
-  // 2. DYNAMIC DROPDOWNS
-  // --------------------------------------------------------------
+  // ── DROPDOWNS ─────────────────────────────────────────────────
   const programSelect = document.getElementById("programSelect");
   const semesterSelect = document.getElementById("semesterSelect");
   const subjectSelect = document.getElementById("subjectSelect");
 
-  function updateSemesterOptions() {
-    const program = programSelect.value;
-    semesterSelect.innerHTML = '<option value="">-- Select Year/Semester --</option>';
-    subjectSelect.innerHTML = '<option value="">-- First select Year/Semester --</option>';
-    subjectSelect.disabled = true;
-
-    if (!program) {
-      semesterSelect.disabled = true;
-      return;
-    }
-
-    semesterSelect.disabled = false;
-
-    if (program.includes("PUC")) {
-      // PU programs have years: 1st Year, 2nd Year
-      if (program.startsWith("I PUC")) {
-        addOption(semesterSelect, "1", "1st Year");
-      } else if (program.startsWith("II PUC")) {
-        addOption(semesterSelect, "2", "2nd Year");
-      }
-    } else {
-      // Degree programs: semesters 1 to 6
-      for (let i = 1; i <= 6; i++) {
-        addOption(semesterSelect, i, i + " Semester");
-      }
-    }
+  function addOption(sel, val, txt) {
+    const o = document.createElement("option");
+    o.value = val; o.textContent = txt;
+    sel.appendChild(o);
   }
 
-  function addOption(select, value, text) {
-    const opt = document.createElement("option");
-    opt.value = value;
-    opt.textContent = text;
-    select.appendChild(opt);
+  function updateSemesterOptions() {
+    const prog = programSelect.value;
+    semesterSelect.innerHTML = '<option value="">Choose year/semester…</option>';
+    subjectSelect.innerHTML = '<option value="">Select year first…</option>';
+    subjectSelect.disabled = true;
+    if (!prog) { semesterSelect.disabled = true; return; }
+    semesterSelect.disabled = false;
+    if (prog.includes("PUC")) {
+      if (prog.startsWith("I PUC")) addOption(semesterSelect, "1", "1st Year");
+      else addOption(semesterSelect, "2", "2nd Year");
+    } else {
+      for (let i = 1; i <= 6; i++) addOption(semesterSelect, i, `Semester ${i}`);
+    }
   }
 
   function updateSubjects() {
-    const program = programSelect.value;
+    const prog = programSelect.value;
     const sem = semesterSelect.value;
-    subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+    subjectSelect.innerHTML = '<option value="">Choose subject…</option>';
     subjectSelect.disabled = true;
-    if (!program || !sem) return;
-
-    const key = `${program}_${sem}`;
-    let subjects = subjectMap[key];
-    if (!subjects) {
-      subjects = ["General", "Elective"];
-    }
-    subjects.forEach(sub => {
-      const opt = document.createElement("option");
-      opt.value = sub;
-      opt.textContent = sub;
-      subjectSelect.appendChild(opt);
-    });
+    if (!prog || !sem) return;
+    const subjects = subjectMap[`${prog}_${sem}`] || ["General", "Elective"];
+    subjects.forEach(s => addOption(subjectSelect, s, s));
     subjectSelect.disabled = false;
   }
 
-  programSelect.addEventListener("change", () => {
-    updateSemesterOptions();
-    updateSubjects();
-  });
+  programSelect.addEventListener("change", () => { updateSemesterOptions(); updateSubjects(); });
   semesterSelect.addEventListener("change", updateSubjects);
-
-  // initial call
   updateSemesterOptions();
 
-  // --------------------------------------------------------------
-  // 3. LOAD BOOKS FROM books.json
-  // --------------------------------------------------------------
+  // ── LOAD BOOKS ────────────────────────────────────────────────
   let booksDB = [];
-
   async function loadBooks() {
     try {
-      const response = await fetch('books.json');
-      if (!response.ok) throw new Error('books.json not found');
-      booksDB = await response.json();
-      console.log(`Loaded ${booksDB.length} books.`);
-      renderBooks(); // initial render (if any default selection)
-    } catch (err) {
-      console.error(err);
-      document.getElementById("booksGrid").innerHTML = `<div class="empty-message">⚠️ Could not load books.json. Make sure the file exists and is valid JSON.</div>`;
+      const r = await fetch('books.json');
+      if (!r.ok) throw new Error('books.json not found');
+      booksDB = await r.json();
+    } catch (e) {
+      console.warn('books.json not loaded:', e.message);
     }
   }
 
-  // --------------------------------------------------------------
-  // 4. RENDER BOOKS (filter by program, semester, subject)
-  // --------------------------------------------------------------
+  // ── RENDER BOOKS ──────────────────────────────────────────────
   function renderBooks() {
-    const program = programSelect.value;
-    const semester = semesterSelect.value;
-    const subject = subjectSelect.value;
-    if (!program || !semester || !subject) {
-      document.getElementById("booksGrid").innerHTML = `<div class="empty-message">Please select Program, Year/Semester and Subject.</div>`;
-      return;
-    }
-    const filtered = booksDB.filter(book => 
-      book.program === program && 
-      String(book.semester) === semester && 
-      book.subject === subject
-    );
+    const prog = programSelect.value;
+    const sem = semesterSelect.value;
+    const subj = subjectSelect.value;
     const grid = document.getElementById("booksGrid");
-    if (filtered.length === 0) {
-      grid.innerHTML = `<div class="empty-message">📭 No books found for ${program} - ${semester} - ${subject}.<br>Add entries in books.json.</div>`;
+    const countEl = document.getElementById("bookCount");
+
+    if (!prog || !sem || !subj) {
+      grid.innerHTML = `<div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-hand-point-up"></i></div>
+        <h3>Almost there</h3>
+        <p>Please complete all three dropdowns above<br>and click <strong>Show Books</strong>.</p>
+      </div>`;
+      countEl.textContent = '';
       return;
     }
-    grid.innerHTML = "";
+
+    const filtered = booksDB.filter(b =>
+      b.program === prog && String(b.semester) === sem && b.subject === subj
+    );
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `<div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-inbox"></i></div>
+        <h3>No books found</h3>
+        <p>No entries yet for <strong>${prog} · Sem ${sem} · ${subj}</strong>.<br>Add entries in <code>books.json</code> to populate this view.</p>
+      </div>`;
+      countEl.textContent = '';
+      return;
+    }
+
+    countEl.textContent = `${filtered.length} book${filtered.length !== 1 ? 's' : ''} found`;
+    grid.innerHTML = '';
     filtered.forEach(book => {
+      const coverImg = (book.pages && book.pages.length)
+        ? book.pages[0]
+        : `https://placehold.co/160x210/f0ebe0/4a6070?text=${encodeURIComponent(book.title?.charAt(0) || 'B')}`;
+
       const card = document.createElement("div");
       card.className = "book-card";
-      const coverImg = (book.pages && book.pages.length) ? book.pages[0] : "https://via.placeholder.com/160x210?text=No+Cover";
       card.innerHTML = `
-        <div class="book-cover"><img src="${coverImg}" alt="${book.title}"></div>
+        <div class="book-cover">
+          <img src="${coverImg}" alt="${book.title}" loading="lazy">
+        </div>
         <div class="book-info">
+          <span class="book-subject-tag">${book.subject || subj}</span>
           <div class="book-title">${book.title}</div>
           <div class="book-author">${book.author}</div>
+        </div>
+        <div class="book-card-footer">
+          <span class="preview-label">Preview pages</span>
+          <span class="preview-icon"><i class="fas fa-eye"></i></span>
         </div>
       `;
       card.addEventListener("click", () => openFlipbook(book));
       grid.appendChild(card);
     });
+
+    // scroll to books
+    document.querySelector('.books-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   document.getElementById("goBtn").addEventListener("click", renderBooks);
 
-  // --------------------------------------------------------------
-  // 5. FLIPBOOK MODAL (unlimited pages)
-  // --------------------------------------------------------------
-  let currentPages = [];
-  let currentIndex = 0;
+  // ── FLIPBOOK ──────────────────────────────────────────────────
+  let currentPages = [], currentIndex = 0;
   const flipModal = document.getElementById("flipbookModal");
   const flipImage = document.getElementById("flipImage");
-  const pageIndicatorSpan = document.getElementById("pageIndicator");
+  const pageDots = document.getElementById("pageDots");
 
   function openFlipbook(book) {
     if (!book.pages || book.pages.length === 0) {
@@ -400,16 +884,32 @@
     }
     currentPages = book.pages;
     currentIndex = 0;
-    document.getElementById("modalBookTitle").innerHTML = `<i class="fas fa-book"></i> ${book.title} · ${book.subject}`;
+    document.getElementById("modalBookTitle").textContent = book.title;
+    document.getElementById("modalBookSub").textContent = `${book.author} · ${book.subject}`;
+    buildDots();
     updateFlipImage();
     flipModal.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function buildDots() {
+    pageDots.innerHTML = '';
+    const maxDots = Math.min(currentPages.length, 12);
+    for (let i = 0; i < maxDots; i++) {
+      const d = document.createElement('div');
+      d.className = 'page-dot' + (i === 0 ? ' active' : '');
+      pageDots.appendChild(d);
+    }
   }
 
   function updateFlipImage() {
     flipImage.src = currentPages[currentIndex];
-    pageIndicatorSpan.innerHTML = `📄 Page ${currentIndex+1} of ${currentPages.length}`;
-    flipImage.style.transform = "scale(0.98)";
-    setTimeout(() => flipImage.style.transform = "scale(1)", 120);
+    document.getElementById("pageIndicator").textContent = `Page ${currentIndex + 1} of ${currentPages.length}`;
+    flipImage.style.transform = "scale(0.96)";
+    setTimeout(() => flipImage.style.transform = "scale(1)", 150);
+    // update dots
+    const dots = pageDots.querySelectorAll('.page-dot');
+    dots.forEach((d, i) => d.classList.toggle('active', i === currentIndex % dots.length));
   }
 
   function nextImage() { currentIndex = (currentIndex + 1) % currentPages.length; updateFlipImage(); }
@@ -417,38 +917,43 @@
 
   document.getElementById("nextImgBtn").addEventListener("click", nextImage);
   document.getElementById("prevImgBtn").addEventListener("click", prevImage);
-  document.getElementById("closeFlipBtn").addEventListener("click", () => flipModal.classList.remove("active"));
-  flipModal.addEventListener("click", (e) => { if (e.target === flipModal) flipModal.classList.remove("active"); });
+  document.getElementById("closeFlipBtn").addEventListener("click", closeModal);
+  flipModal.addEventListener("click", e => { if (e.target === flipModal) closeModal(); });
 
-  // Touch swipe for mobile
-  let touchStartX = 0;
-  flipImage.addEventListener("touchstart", (e) => { touchStartX = e.changedTouches[0].screenX; });
-  flipImage.addEventListener("touchend", (e) => {
-    let endX = e.changedTouches[0].screenX;
-    if (endX < touchStartX - 40) nextImage();
-    if (endX > touchStartX + 40) prevImage();
+  function closeModal() {
+    flipModal.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  // keyboard navigation
+  document.addEventListener("keydown", e => {
+    if (!flipModal.classList.contains("active")) return;
+    if (e.key === "ArrowRight") nextImage();
+    if (e.key === "ArrowLeft") prevImage();
+    if (e.key === "Escape") closeModal();
   });
 
-  // --------------------------------------------------------------
-  // 6. SPLASH SCREEN (3 seconds)
-  // --------------------------------------------------------------
+  // touch swipe
+  let touchX = 0;
+  flipImage.addEventListener("touchstart", e => { touchX = e.changedTouches[0].screenX; });
+  flipImage.addEventListener("touchend", e => {
+    const dx = e.changedTouches[0].screenX - touchX;
+    if (dx < -40) nextImage();
+    if (dx > 40) prevImage();
+  });
+
+  // ── SPLASH ────────────────────────────────────────────────────
   window.addEventListener("load", () => {
+    loadBooks();
     setTimeout(() => {
       const splash = document.getElementById("splash");
       splash.style.opacity = "0";
       setTimeout(() => {
         splash.style.display = "none";
         document.getElementById("mainApp").classList.add("visible");
-      }, 600);
-    }, 3000);
-    loadBooks(); // fetch books after splash
+      }, 800);
+    }, 2800);
   });
-
-  // Social links (replace with actual URLs)
-  document.getElementById("instaLink").href = "https://instagram.com/yourcollege";
-  document.getElementById("fbLink").href = "https://facebook.com/yourcollege";
-  document.getElementById("linkedinLink").href = "https://linkedin.com/school/yourcollege";
-  document.getElementById("devLink").href = "#"; // replace with your portfolio
 </script>
 </body>
 </html>
