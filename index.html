@@ -404,31 +404,31 @@
     /* ─── FLIPBOOK MODAL ─── */
     .modal-overlay {
       position: fixed; inset: 0;
-      background: rgba(10, 20, 32, 0.92);
-      backdrop-filter: blur(16px);
+      background: rgba(6, 12, 22, 0.96);
+      backdrop-filter: blur(20px);
       display: flex; align-items: center; justify-content: center;
       visibility: hidden; opacity: 0;
-      transition: all 0.3s ease;
+      transition: all 0.35s ease;
       z-index: 10000;
       padding: 1rem;
     }
     .modal-overlay.active { visibility: visible; opacity: 1; }
     .flipbook-container {
-      background: var(--ink);
-      border: 1px solid rgba(201,168,76,0.2);
-      width: 100%; max-width: 700px;
-      border-radius: 16px;
-      padding: 1.8rem;
-      box-shadow: 0 40px 80px rgba(0,0,0,0.6);
-      transform: translateY(20px);
-      transition: transform 0.3s ease;
+      background: #111d2b;
+      border: 1px solid rgba(201,168,76,0.18);
+      width: 100%; max-width: 780px;
+      border-radius: 20px;
+      padding: 1.6rem 1.8rem 1.4rem;
+      box-shadow: 0 50px 100px rgba(0,0,0,0.7);
+      transform: scale(0.96) translateY(16px);
+      transition: transform 0.35s cubic-bezier(0.34,1.3,0.64,1);
     }
-    .modal-overlay.active .flipbook-container { transform: translateY(0); }
+    .modal-overlay.active .flipbook-container { transform: scale(1) translateY(0); }
     .flipbook-header {
       display: flex; justify-content: space-between; align-items: flex-start;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1.2rem;
-      border-bottom: 1px solid rgba(201,168,76,0.2);
+      margin-bottom: 1.2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(201,168,76,0.15);
     }
     .flipbook-title {
       font-family: 'Playfair Display', serif;
@@ -436,7 +436,7 @@
     }
     .flipbook-subtitle { color: var(--gold); font-size: 0.72rem; margin-top: 4px; letter-spacing: 0.08em; }
     .close-btn {
-      background: rgba(255,255,255,0.08); border: none;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
       width: 36px; height: 36px; border-radius: 50%;
       color: var(--white); cursor: pointer; font-size: 0.85rem;
       display: flex; align-items: center; justify-content: center;
@@ -444,38 +444,141 @@
       flex-shrink: 0;
     }
     .close-btn:hover { background: rgba(255,255,255,0.15); }
-    .carousel-area {
-      position: relative; display: flex; align-items: center; justify-content: center;
-      min-height: 400px; gap: 1rem;
-    }
-    .flip-img {
-      max-width: 340px; width: 100%;
-      border-radius: 4px 12px 12px 4px;
-      box-shadow: 8px 8px 30px rgba(0,0,0,0.4), -3px 0 10px rgba(0,0,0,0.2);
-      transition: transform 0.15s ease;
-      cursor: pointer;
+
+    /* ── THE BOOK STAGE ── */
+    .book-stage {
+      display: flex; align-items: center; justify-content: center;
+      gap: 1.2rem;
+      padding: 0.5rem 0 1rem;
     }
     .nav-arrow {
-      background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.25);
-      color: var(--gold-light); width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.22);
+      color: var(--gold-light); width: 42px; height: 42px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer; font-size: 1rem;
-      transition: background 0.2s, transform 0.15s;
+      cursor: pointer; font-size: 0.95rem;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      flex-shrink: 0; user-select: none;
+    }
+    .nav-arrow:hover { background: rgba(201,168,76,0.22); box-shadow: 0 0 16px rgba(201,168,76,0.2); }
+    .nav-arrow:active { transform: scale(0.92); }
+    .nav-arrow:disabled { opacity: 0.25; cursor: default; }
+
+    /* ── 3D FLIP WRAPPER ── */
+    .flip-scene {
+      perspective: 1400px;
+      width: 300px; height: 420px;
       flex-shrink: 0;
+      position: relative;
     }
-    .nav-arrow:hover { background: rgba(201,168,76,0.25); transform: scale(1.08); }
+    /* shadow on the table */
+    .flip-scene::after {
+      content: '';
+      position: absolute; bottom: -18px; left: 10%; right: 10%;
+      height: 20px;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.55) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    /* The book spine / back stack illusion */
+    .book-stack {
+      position: absolute; inset: 0;
+      border-radius: 3px 10px 10px 3px;
+      overflow: hidden;
+    }
+    .book-stack-inner {
+      width: 100%; height: 100%;
+      background: #e8dcc8;
+      border-radius: 3px 10px 10px 3px;
+      box-shadow: inset -6px 0 14px rgba(0,0,0,0.2);
+    }
+    .book-stack-inner img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 3px 10px 10px 3px;
+      display: block;
+    }
+
+    /* Spine strip (left edge) */
+    .spine-strip {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 14px;
+      background: linear-gradient(90deg, #7a5c28 0%, #c9a84c 40%, #a07830 100%);
+      border-radius: 3px 0 0 3px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.4);
+      z-index: 2;
+    }
+
+    /* Flipping leaf */
+    .page-leaf {
+      position: absolute; inset: 0;
+      transform-style: preserve-3d;
+      transform-origin: left center;
+      transform: rotateY(0deg);
+      transition: transform 0.72s cubic-bezier(0.645, 0.045, 0.355, 1.000);
+      border-radius: 3px 10px 10px 3px;
+      z-index: 10;
+    }
+    .page-leaf.turning-forward {
+      transition: transform 0.72s cubic-bezier(0.645, 0.045, 0.355, 1.000);
+    }
+    .page-leaf.turning-back {
+      transition: transform 0.72s cubic-bezier(0.645, 0.045, 0.355, 1.000);
+    }
+    /* Front face */
+    .page-front, .page-back {
+      position: absolute; inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 3px 10px 10px 3px;
+      overflow: hidden;
+    }
+    .page-front { background: #e8dcc8; }
+    .page-back {
+      background: #e8dcc8;
+      transform: rotateY(180deg);
+    }
+    .page-front img, .page-back img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+      border-radius: 3px 10px 10px 3px;
+    }
+
+    /* Page curl shadow overlay on front face */
+    .page-front::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to right, rgba(0,0,0,0.18) 0%, transparent 18%);
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    /* Spine shadow on back face */
+    .page-back::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 22px;
+      background: linear-gradient(to right, rgba(0,0,0,0.25), transparent);
+      z-index: 1; pointer-events: none;
+    }
+
+    /* ── PAGE INDICATOR ── */
     .page-indicator {
-      text-align: center; margin-top: 1.2rem;
-      color: var(--slate-light); font-size: 0.8rem;
-      display: flex; align-items: center; justify-content: center; gap: 12px;
+      text-align: center; margin-top: 0.3rem;
+      color: var(--slate-light); font-size: 0.78rem;
+      display: flex; align-items: center; justify-content: center; gap: 14px;
     }
-    .page-dots { display: flex; gap: 6px; }
+    .page-dots { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; max-width: 200px; }
     .page-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: rgba(201,168,76,0.3);
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(201,168,76,0.25);
       transition: background 0.2s, transform 0.2s;
+      cursor: pointer;
     }
-    .page-dot.active { background: var(--gold); transform: scale(1.3); }
+    .page-dot.active { background: var(--gold); transform: scale(1.5); }
+
+    /* hint text */
+    .flip-hint {
+      text-align: center; margin-top: 0.5rem;
+      font-size: 0.65rem; color: rgba(122,149,168,0.55);
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
 
     /* ─── FOOTER ─── */
     .footer {
@@ -528,7 +631,9 @@
       .footer { padding: 2rem 1.2rem; }
       .footer-inner { grid-template-columns: 1fr; }
       .footer-bottom { flex-direction: column; text-align: center; }
-      .flip-img { max-width: 260px; }
+      .flip-scene { width: 220px; height: 308px; }
+      .flipbook-container { padding: 1.2rem; }
+      .nav-arrow { width: 36px; height: 36px; font-size: 0.8rem; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -704,19 +809,43 @@
       </div>
       <button class="close-btn" id="closeFlipBtn" aria-label="Close"><i class="fas fa-times"></i></button>
     </div>
-    <div class="carousel-area">
+
+    <div class="book-stage">
       <button class="nav-arrow" id="prevImgBtn" aria-label="Previous page">
         <i class="fas fa-chevron-left"></i>
       </button>
-      <img id="flipImage" class="flip-img" src="" alt="Book page preview">
+
+      <!-- 3D Flip Scene -->
+      <div class="flip-scene" id="flipScene">
+        <!-- Back page (shown behind during flip) -->
+        <div class="book-stack" id="bookStack">
+          <div class="book-stack-inner">
+            <img id="stackImg" src="" alt="">
+          </div>
+        </div>
+        <!-- Spine strip -->
+        <div class="spine-strip"></div>
+        <!-- The turning leaf -->
+        <div class="page-leaf" id="pageLeaf">
+          <div class="page-front">
+            <img id="frontImg" src="" alt="Book page">
+          </div>
+          <div class="page-back">
+            <img id="backImg" src="" alt="Next page">
+          </div>
+        </div>
+      </div>
+
       <button class="nav-arrow" id="nextImgBtn" aria-label="Next page">
         <i class="fas fa-chevron-right"></i>
       </button>
     </div>
+
     <div class="page-indicator">
       <span id="pageIndicator">Page 1</span>
       <div class="page-dots" id="pageDots"></div>
     </div>
+    <div class="flip-hint">← → arrow keys or swipe to turn pages</div>
   </div>
 </div>
 
@@ -871,52 +1000,170 @@
 
   document.getElementById("goBtn").addEventListener("click", renderBooks);
 
-  // ── FLIPBOOK ──────────────────────────────────────────────────
-  let currentPages = [], currentIndex = 0;
-  const flipModal = document.getElementById("flipbookModal");
-  const flipImage = document.getElementById("flipImage");
-  const pageDots = document.getElementById("pageDots");
+  // ── FLIPBOOK — 3D PAGE TURN ENGINE ───────────────────────────
+  let currentPages = [], currentIndex = 0, isAnimating = false;
+  const flipModal    = document.getElementById("flipbookModal");
+  const pageLeaf     = document.getElementById("pageLeaf");
+  const frontImg     = document.getElementById("frontImg");
+  const backImg      = document.getElementById("backImg");
+  const stackImg     = document.getElementById("stackImg");
+  const pageDots     = document.getElementById("pageDots");
+  const prevBtn      = document.getElementById("prevImgBtn");
+  const nextBtn      = document.getElementById("nextImgBtn");
+
+  // Preload an image url silently
+  function preload(src) {
+    if (!src) return;
+    const i = new Image(); i.src = src;
+  }
 
   function openFlipbook(book) {
     if (!book.pages || book.pages.length === 0) {
-      alert("This book has no page images yet.");
-      return;
+      alert("This book has no page images yet."); return;
     }
     currentPages = book.pages;
     currentIndex = 0;
+    isAnimating = false;
+
     document.getElementById("modalBookTitle").textContent = book.title;
-    document.getElementById("modalBookSub").textContent = `${book.author} · ${book.subject}`;
+    document.getElementById("modalBookSub").textContent   = `${book.author} · ${book.subject}`;
+
+    // Reset leaf to resting position instantly (no transition)
+    pageLeaf.style.transition = 'none';
+    pageLeaf.style.transform  = 'rotateY(0deg)';
+
+    // Seed images
+    frontImg.src = currentPages[0];
+    backImg.src  = currentPages[1] || currentPages[0];
+    stackImg.src = currentPages[0];
+
+    // Preload next few
+    preload(currentPages[1]);
+    preload(currentPages[2]);
+
     buildDots();
-    updateFlipImage();
+    updateIndicator();
+    updateNavButtons();
     flipModal.classList.add("active");
     document.body.style.overflow = "hidden";
   }
 
   function buildDots() {
     pageDots.innerHTML = '';
-    const maxDots = Math.min(currentPages.length, 12);
-    for (let i = 0; i < maxDots; i++) {
+    const max = Math.min(currentPages.length, 15);
+    for (let i = 0; i < max; i++) {
       const d = document.createElement('div');
       d.className = 'page-dot' + (i === 0 ? ' active' : '');
+      d.addEventListener('click', () => { if (!isAnimating) jumpToPage(i); });
       pageDots.appendChild(d);
     }
   }
 
-  function updateFlipImage() {
-    flipImage.src = currentPages[currentIndex];
-    document.getElementById("pageIndicator").textContent = `Page ${currentIndex + 1} of ${currentPages.length}`;
-    flipImage.style.transform = "scale(0.96)";
-    setTimeout(() => flipImage.style.transform = "scale(1)", 150);
-    // update dots
+  function updateIndicator() {
+    document.getElementById("pageIndicator").textContent =
+      `Page ${currentIndex + 1} of ${currentPages.length}`;
     const dots = pageDots.querySelectorAll('.page-dot');
     dots.forEach((d, i) => d.classList.toggle('active', i === currentIndex % dots.length));
   }
 
-  function nextImage() { currentIndex = (currentIndex + 1) % currentPages.length; updateFlipImage(); }
-  function prevImage() { currentIndex = (currentIndex - 1 + currentPages.length) % currentPages.length; updateFlipImage(); }
+  function updateNavButtons() {
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex === currentPages.length - 1;
+  }
 
-  document.getElementById("nextImgBtn").addEventListener("click", nextImage);
-  document.getElementById("prevImgBtn").addEventListener("click", prevImage);
+  // ── FORWARD TURN (right → away) ──
+  function turnForward() {
+    if (isAnimating || currentIndex >= currentPages.length - 1) return;
+    isAnimating = true;
+
+    const nextIdx = currentIndex + 1;
+
+    // Stack underneath shows the upcoming page
+    stackImg.src = currentPages[nextIdx];
+
+    // Front = current page, Back = next page (already loaded if possible)
+    frontImg.src = currentPages[currentIndex];
+    backImg.src  = currentPages[nextIdx];
+    preload(currentPages[nextIdx + 1]);
+
+    // Animate: leaf sweeps from 0° → −180° (rotates left, revealing back face)
+    pageLeaf.style.transition = 'none';
+    pageLeaf.style.transform  = 'rotateY(0deg)';
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      pageLeaf.style.transition = 'transform 0.75s cubic-bezier(0.645, 0.045, 0.355, 1.000)';
+      pageLeaf.style.transform  = 'rotateY(-180deg)';
+    }));
+
+    setTimeout(() => {
+      // After turn: the new page is "current" — reset leaf to show front face = nextIdx
+      currentIndex = nextIdx;
+      pageLeaf.style.transition = 'none';
+      pageLeaf.style.transform  = 'rotateY(0deg)';
+      frontImg.src = currentPages[currentIndex];
+      backImg.src  = currentPages[currentIndex + 1] || currentPages[currentIndex];
+      stackImg.src = currentPages[currentIndex];
+      updateIndicator();
+      updateNavButtons();
+      isAnimating = false;
+    }, 760);
+  }
+
+  // ── BACKWARD TURN (left → toward you) ──
+  function turnBack() {
+    if (isAnimating || currentIndex <= 0) return;
+    isAnimating = true;
+
+    const prevIdx = currentIndex - 1;
+
+    // Stack underneath shows the previous page (destination)
+    stackImg.src = currentPages[currentIndex];
+
+    // Leaf starts "already flipped" showing the current page on the back face
+    // then sweeps back to 0° revealing the previous page on the front
+    frontImg.src = currentPages[prevIdx];
+    backImg.src  = currentPages[currentIndex];
+
+    // Start at −180° (flipped state), no transition
+    pageLeaf.style.transition = 'none';
+    pageLeaf.style.transform  = 'rotateY(-180deg)';
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      pageLeaf.style.transition = 'transform 0.75s cubic-bezier(0.645, 0.045, 0.355, 1.000)';
+      pageLeaf.style.transform  = 'rotateY(0deg)';
+    }));
+
+    setTimeout(() => {
+      currentIndex = prevIdx;
+      frontImg.src = currentPages[currentIndex];
+      backImg.src  = currentPages[currentIndex + 1] || currentPages[currentIndex];
+      stackImg.src = currentPages[currentIndex];
+      updateIndicator();
+      updateNavButtons();
+      isAnimating = false;
+    }, 760);
+  }
+
+  // ── JUMP TO PAGE (dot click) ──
+  function jumpToPage(idx) {
+    if (idx === currentIndex || isAnimating) return;
+    const dir = idx > currentIndex ? 1 : -1;
+    currentIndex = idx;
+    // Instant swap with a quick scale pop
+    pageLeaf.style.transition = 'none';
+    pageLeaf.style.transform  = 'rotateY(0deg)';
+    frontImg.src = currentPages[currentIndex];
+    backImg.src  = currentPages[currentIndex + 1] || currentPages[currentIndex];
+    stackImg.src = currentPages[currentIndex];
+    pageLeaf.style.transition = 'transform 0.25s ease';
+    pageLeaf.style.transform  = dir > 0 ? 'rotateY(-8deg)' : 'rotateY(8deg)';
+    setTimeout(() => { pageLeaf.style.transform = 'rotateY(0deg)'; }, 250);
+    updateIndicator();
+    updateNavButtons();
+  }
+
+  nextBtn.addEventListener("click", turnForward);
+  prevBtn.addEventListener("click", turnBack);
   document.getElementById("closeFlipBtn").addEventListener("click", closeModal);
   flipModal.addEventListener("click", e => { if (e.target === flipModal) closeModal(); });
 
@@ -925,21 +1172,38 @@
     document.body.style.overflow = "";
   }
 
-  // keyboard navigation
+  // Keyboard
   document.addEventListener("keydown", e => {
     if (!flipModal.classList.contains("active")) return;
-    if (e.key === "ArrowRight") nextImage();
-    if (e.key === "ArrowLeft") prevImage();
-    if (e.key === "Escape") closeModal();
+    if (e.key === "ArrowRight") turnForward();
+    if (e.key === "ArrowLeft")  turnBack();
+    if (e.key === "Escape")     closeModal();
   });
 
-  // touch swipe
-  let touchX = 0;
-  flipImage.addEventListener("touchstart", e => { touchX = e.changedTouches[0].screenX; });
-  flipImage.addEventListener("touchend", e => {
-    const dx = e.changedTouches[0].screenX - touchX;
-    if (dx < -40) nextImage();
-    if (dx > 40) prevImage();
+  // Touch swipe
+  let touchStartX = 0, touchStartY = 0;
+  const flipScene = document.getElementById("flipScene");
+  flipScene.addEventListener("touchstart", e => {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+  }, { passive: true });
+  flipScene.addEventListener("touchend", e => {
+    const dx = e.changedTouches[0].screenX - touchStartX;
+    const dy = Math.abs(e.changedTouches[0].screenY - touchStartY);
+    if (dy > 40) return; // vertical scroll, ignore
+    if (dx < -45) turnForward();
+    if (dx > 45)  turnBack();
+  });
+
+  // Drag on the leaf itself for desktop feel
+  let dragStartX = null;
+  pageLeaf.addEventListener("mousedown", e => { dragStartX = e.clientX; });
+  document.addEventListener("mouseup", e => {
+    if (dragStartX === null || !flipModal.classList.contains("active")) return;
+    const dx = e.clientX - dragStartX;
+    dragStartX = null;
+    if (dx < -30) turnForward();
+    if (dx > 30)  turnBack();
   });
 
   // ── SPLASH ────────────────────────────────────────────────────
